@@ -1,0 +1,5 @@
+const config = {
+    api_key: "xxxx",
+    api_token: "xxxx",
+    board_id: "xxxx"
+}
