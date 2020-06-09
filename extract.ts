@@ -141,4 +141,9 @@ const getThroughputData = (cards) => {
     return rows
 }
 
+const getFlowData = (cards) => {
+    let rows = [['day', 'done']];
+    return rows
+}
+
 
