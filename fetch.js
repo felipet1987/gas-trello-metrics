@@ -4,7 +4,8 @@ var key_and_token = "key=" + config.api_key + "&token=" + config.api_token;
 
 const getColumns = () => {
     var columnUrl = url + "boards/" + config.board_id + "/lists/all/?" + key_and_token;
-    return JSON.parse((UrlFetchApp.fetch(columnUrl).getContentText()));
+    cols = JSON.parse((UrlFetchApp.fetch(columnUrl).getContentText()))
+    return cols;
 }
 
 
@@ -54,6 +55,7 @@ const getStates = (card) => {
     var actions = getActions(card)
     columns = columns.filter(col => col.name !== 'Template')
 
+
     return columns.map(col => {
         if (col.name.includes("Backlog")) {
             return getCreationDate(card)
@@ -65,7 +67,7 @@ const getStates = (card) => {
 
         )
         if (typeof action !== 'undefined') {
-            const date = new Date(action.date.split("T")[0])
+            const date = new Date(action.date)
             date.setHours(0, 0, 0, 0);
             return date
         }
@@ -87,4 +89,10 @@ const getCreationDate = card => {
 }
 
 let columns = getColumns()
-const names = columns.filter(col => col.name !== 'Template').map(col => col.name);
+let names = columns.filter(col => col.name !== 'Template').map(col => col.name);
+names = names.map(n => {
+    if (n === 'Backlog') { 
+        return 'Creacion' 
+    }
+    return n
+})

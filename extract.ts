@@ -22,6 +22,32 @@ const getDoneWeek = date => {
 
 }
 
+const countDays = (states) => {
+    let diffDays = []
+
+    if (states[states.length] !== "") {
+        for (let index = 0; index < states.length; index++) {
+            var diff = ""
+            if (states[index] !== "") {
+                
+                for (let i = index + 1; i <= states.length; i++) {
+                    if(states[states.length - 1] === ""){
+                        break;
+                    } 
+                    if (states[i] !== "") {
+                        diff = getDiffDays(states[i], states[index]).toString()
+                        break;
+                    }
+                }
+            }
+            diffDays.push(diff)
+        }
+    }
+    return diffDays
+}
+
+
+
 const extractFirstRows = (data) => {
     let rows = [[...['idShort', 'id', 'name', 'labels'], ...names, 'week']]
     data.map(d => {
@@ -53,27 +79,12 @@ const extractSecondRows = (data) => {
 }
 
 
-const countDays = (states) => {
-    let diffDays = []
-    for (let index = 0; index < states.length; index++) {
-        var diff = ""
-        if (states[index] !== "") {
-            for (let i = index + 1; i <= states.length ; i++) {
-                if (states[i] !== "") {
-                    diff = getDiffDays(states[i], states[index]).toString()
-                    break;
-                }
-            }
-        }
-        diffDays.push(diff)
-    })
-    return diffDays
-}
 
 
-const extractThirdRows = (data) =>{
 
-   const min = data.map(function (d) {
+const extractThirdRows = (data) => {
+
+    const min = data.map(function (d) {
         return d.cards.map(c => c.card.week).filter(c => c !== 0).sort()[0]
     }).sort()[0]
 
@@ -86,7 +97,7 @@ const extractThirdRows = (data) =>{
 
     weeks.map(week => {
         const count = data.map(d => {
-            return d.cards.map(c =>c.card.week).filter(c => c == week).map(c => 1).reduce((a, b) => a + b, 0)
+            return d.cards.map(c => c.card.week).filter(c => c == week).map(c => 1).reduce((a, b) => a + b, 0)
         }).reduce((a, b) => a + b, 0)
         const row = [week, count]
         rows.push(row)
@@ -96,19 +107,46 @@ const extractThirdRows = (data) =>{
 
 }
 
+const extractFourthRows = (data) => {
 
-const countCummulatives = (date, dates, current) => {
+    let rows = [[...['date'], ...names]];
 
-    let count = 0
-    for (let index = 4; index < dates.length - 2; index++) {
-        for (let next = index + 1; next < dates.length; next++) {
-            if (dates[current] > date && date < dates[next + 1]) {
-                count++
-            }
+    const min = data.map(function (d) {
+        return d.cards.map(c => c.card.states[0]).sort((a, b) => a.getTime() - b.getTime())[0]
+    }).sort((a, b) => a.getTime() - b.getTime())[0]
+
+    for (let date = new Date(min); date < new Date(); date.setDate(date.getDate() + 1)) {
+        const ye = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(date)
+        const mo = new Intl.DateTimeFormat('en', { month: '2-digit' }).format(date)
+        const da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(date)
+        const formattedDate = `${da}/${mo}/${ye}`
+
+        let cummulatives = []
+        for (let index = 0; index < names.length; index++) {
+            let count = 1
+            // data.map(d => d.cards.map(c => {
+            //     const states = c.card.states
+            //     if (states[index] !== "") {
+            //         for (let next = index + 1; next <= states.length; next++) {
+            //             if (states[next] !== "") {
+            //                 if (date.getTime() >= states[index] && states[index] < states[next]) {
+            //                     count++
+            //                 }
+            //                 break;
+            //             }
+            //         }
+            //     }
+
+            // }))
+            cummulatives.push(count)
         }
-    } return count
+        rows.push([...[formattedDate], ...cummulatives])
+    }
 
+
+    return rows
 }
+
 const getFlowData = (cards) => {
 
     let rows = [[...['date'], ...names]];
@@ -123,13 +161,6 @@ const getFlowData = (cards) => {
         let days = 0
 
         cards.filter(c => c[0] !== 'idShort').map(c => {
-
-            const cummulatives = []
-
-            for (let i = 4; i < c.length - 2; i++) {
-                const cummulative = countCummulatives(date, c, i);
-                cummulatives.push(cummulative)
-            }
         })
         rows.push([date, days])
     }
