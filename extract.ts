@@ -29,11 +29,11 @@ const countDays = (states) => {
         for (let index = 0; index < states.length; index++) {
             var diff = ""
             if (states[index] !== "") {
-                
+
                 for (let i = index + 1; i <= states.length; i++) {
-                    if(states[states.length - 1] === ""){
+                    if (states[states.length - 1] === "") {
                         break;
-                    } 
+                    }
                     if (states[i] !== "") {
                         diff = getDiffDays(states[i], states[index]).toString()
                         break;
@@ -57,9 +57,6 @@ const extractFirstRows = (data) => {
     })
     return rows;
 }
-
-
-
 
 
 const extractSecondRows = (data) => {
@@ -123,21 +120,23 @@ const extractFourthRows = (data) => {
 
         let cummulatives = []
         for (let index = 0; index < names.length; index++) {
-            let count = 1
-            // data.map(d => d.cards.map(c => {
-            //     const states = c.card.states
-            //     if (states[index] !== "") {
-            //         for (let next = index + 1; next <= states.length; next++) {
-            //             if (states[next] !== "") {
-            //                 if (date.getTime() >= states[index] && states[index] < states[next]) {
-            //                     count++
-            //                 }
-            //                 break;
-            //             }
-            //         }
-            //     }
+            let count = 0
+            data.map(d => d.cards.map(c => {
+                const states = c.card.states
+                if (states[index] !== "") {
+                    for (let next = index + 1; next <= states.length; next++) {
+                        if (states[next] !== "") {
+                            const indexDate = new Date(states[index])
+                            const nextDate = new Date(states[next])
+                            if (date >= indexDate && indexDate < nextDate) {
+                                count++
+                            }
+                            break;
+                        }
+                    }
+                }
 
-            // }))
+            }))
             cummulatives.push(count)
         }
         rows.push([...[formattedDate], ...cummulatives])
