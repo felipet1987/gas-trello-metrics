@@ -9,6 +9,8 @@ const getColumns = () => {
 }
 
 
+
+
 const getActions = (card) => {
     var actionsUrl = url + "cards/" + card.id + "/actions/?" + key_and_token;
     return JSON.parse(UrlFetchApp.fetch(actionsUrl).getContentText());
@@ -20,7 +22,7 @@ const getCards = (col) => {
 }
 
 
-const getData = () => {
+const getAllCards = () => {
     return columns.map(col => {
         const cards = getCards(col).map(card => {
             const states = getStates(card);
@@ -28,17 +30,13 @@ const getData = () => {
             const week = getDoneWeek(states[states.length - 1])
 
             return {
-                card: {
-                    idShort: card.idShort,
-                    id: card.id,
-                    name: card.name,
-                    labels: labels,
-                    states: states,
-                    week: week
-                }
+                idShort: card.idShort,
+                id: card.id,
+                name: card.name,
+                labels: labels,
+                states: states,
+                week: week
             }
-
-
         })
 
         return {
@@ -89,10 +87,11 @@ const getCreationDate = card => {
 }
 
 let columns = getColumns()
+
 let names = columns.filter(col => col.name !== 'Template').map(col => col.name);
 names = names.map(n => {
-    if (n === 'Backlog') { 
-        return 'Creacion' 
+    if (n === 'Backlog') {
+        return 'Creacion'
     }
     return n
 })
