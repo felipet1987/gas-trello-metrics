@@ -1,34 +1,57 @@
 
 const extractFirstRows = (data) => {
+    const names = data.map(d => d.name)
     let rows = [[...['idShort', 'id', 'name', 'labels'], ...names, 'week']]
     data.map(d => {
         rows = rows.concat(d.cards.map(c => {
-            return [c.idShort, c.id, c.name, c.labels, ...c.states, c.week]
+            const states = c.states
+            return [c.idShort, c.id, c.name, c.labels, ...states, c.week]
         }))
     })
     return rows;
 }
 const extractSecondRows = (data) => {
-    const getRows = () => {
-        let rows = [[...['name'], ...names]];
-        data.map(d => {
-            d.cards.map(c => {
-                let diffDays = countDays(c.states)
-                rows.push([...[c.name], ...diffDays])
-            })
-        })
-        return rows
+    const getDiffDays = (start, end) => {
+        var timeStart = new Date(start).getTime()
+        var timeEnd = new Date(end).getTime()
+        var timeDiff = Math.abs(timeEnd - timeStart)
+        var days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        if (isNaN(days)) {
+            days = 0
+        }
+        return days
     }
-    return getRows()
+    const getDiff = (states, index) => {
+        var diff = ""
+        if (states[index] !== "") {
+            for (let i = index + 1; i <= states.length; i++) {
+                if (states[states.length - 1] === "") {
+                    return;
+                }
+                if (states[i] !== "") {
+                    return getDiffDays(states[i], states[index]).toString()
+                }
+            }
+        }
+    }
+    const countDays = (states) => {
+        let diffDays = []
+        if (states[states.length] !== "") {
+            for (let index = 0; index < states.length; index++) {
+                diffDays.push(getDiff(states,index))
+            }
+        }
+        return diffDays
+    }
+    const names = data.map(d => d.name)
+    let rows = [[...['name'], ...names]];
+    data.map(d => d.cards.map(c => rows.push([...[c.name], ...countDays(c.states)])))
+    return rows
 }
 
 
-
-
-
 const extractThirdRows = (data) => {
-
-    const min = data.map(function (d) {
+    const min = data.map(d => {
         return d.cards.map(c => c.week).filter(c => c !== 0).sort()[0]
     }).sort()[0]
     let max = getDoneWeek(new Date())
@@ -42,115 +65,78 @@ const extractThirdRows = (data) => {
         rows.push(row)
     })
     return rows
-
 }
 
 const extractFourthRows = (data) => {
+    data.map(d => d.cards.map(c => console.log(d.name,c.name) ))
 
-    let rows = [[...['date'], ...names]];
-
-    const min = data.map(function (d) {
-        return d.cards.map(c => c.states[0]).sort((a, b) => a.getTime() - b.getTime())[0]
-    }).sort((a, b) => a.getTime() - b.getTime())[0]
-
-    for (let date = new Date(min); date < new Date(); date.setDate(date.getDate() + 1)) {
+    const getMin = (data) => {
+        return data.map(d => d.cards.map(c => c.states[0])
+            .sort((a, b) => a.getTime() - b.getTime())[0])
+            .sort((a, b) => a.getTime() - b.getTime())[0]
+    }
+    const getCumm = (date, data, index) => {
+        const past = date.getTime()
+        const future = past + 86400000
+        let result = []
+        data.map(d => d.cards
+            .map(c => {
+                const state = c.states.find((s, i) => s.date !== "" && s.id === data[index].id )
+                if(state && (new Date(state.date).getTime() - past) >= 0 && (new Date(state.date).getTime() - future) < 0 ){
+                    const indexDate = new Date(state.date)
+                    const greater = indexDate.getTime() - past >= 0
+                    const lesser =  future - indexDate.getTime() > 0
+                    const between = greater && lesser
+                    result.push([formatted(date),formatted(indexDate),formatted(date.setDate(date.getDate() + 1)),between])
+                }
+            })
+        )
+        return result.length
+    }
+    const min = getMin(data);
+    const formatted = date => {
         const ye = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(date)
         const mo = new Intl.DateTimeFormat('en', { month: '2-digit' }).format(date)
         const da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(date)
-        const formattedDate = `${da}/${mo}/${ye}`
-        const nextTime = new Date(date.getDate() + 1)
-
+        return `${da}/${mo}/${ye}`
+    }
+    const names = data.map(d => d.name)
+    let rows = [[...['date'], ...names]];
+    for (let date = new Date(min); date < new Date(); date.setDate(date.getDate() + 1)) {
+        //const reducer = (a, c) => a + c;
         let cummulatives = []
         for (let index = 0; index < names.length; index++) {
-            let count = 0
-            // data.map(col => {
-            //     const cards = col.cards
-            //     cards.map(card => {
-            //         const states = card.states
-            //         const state = states[index];
-            //         const indexTime = new Date(state)
-            //         const equalOrGreater = date > indexTime
-            //         const isLesser = indexTime < nextTime
-            //         if (equalOrGreater && isLesser) {
-            //             count++
-            //         }
-            //     })
-            // })
+            const count = getCumm(date,data,index)
             cummulatives.push(count)
         }
-        rows.push([...[formattedDate], ...cummulatives])
+        rows.push([...[formatted(date)], ...cummulatives])
     }
     return rows
 }
 
-const getFlowData = (cards) => {
-
-    let rows = [[...['date'], ...names]];
-    let minDate = cards.filter(c => c[0] !== 'idShort').map(c => c[4]).reduce((p, v) => (p < v ? p : v))
-
-    for (let date = new Date(minDate); date < new Date(); date.setDate(date.getDate() + 1)) {
-
-        // const ye = new Intl.DateTimeFormat('en', { year: 'numeric' }).format(date)
-        // const mo = new Intl.DateTimeFormat('en', { month: '2-digit' }).format(date)
-        // const da = new Intl.DateTimeFormat('en', { day: '2-digit' }).format(date)
-        // const formattedDate = `${da}/${mo}/${ye}`
-        let days = 0
-
-        cards.filter(c => c[0] !== 'idShort').map(c => {
-        })
-        rows.push([date, days])
-    }
-    return rows
-}
+const getCummulative = (index, date, next, data) => {
 
 
+    let count = 0
 
-
-const getDiffDays = (start, end) => {
-    var timeStart = new Date(start).getTime()
-    var timeEnd = new Date(end).getTime()
-    var timeDiff = Math.abs(timeEnd - timeStart)
-    var days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-    if (isNaN(days)) {
-        days = 0
-    }
-    return days
-}
-
-const countDays = (states) => {
-    let diffDays = []
-
-    if (states[states.length] !== "") {
-        for (let index = 0; index < states.length; index++) {
-            var diff = ""
-            if (states[index] !== "") {
-                for (let i = index + 1; i <= states.length; i++) {
-                    if (states[states.length - 1] === "") {
-                        break;
-                    }
-                    if (states[i] !== "") {
-                        diff = getDiffDays(states[i], states[index]).toString()
-                        break;
-                    }
+    data.map(col => {
+        const cards = col.cards
+        cards.map(c => {
+            const state = c.states[index]
+            if (state !== "") {
+                const indexTime = new Date(state).getTime()
+                const greater = date > indexTime
+                const lesser = indexTime < next
+                if ((greater && lesser)) {
+                    count++
                 }
             }
-            diffDays.push(diff)
-        }
-    }
-    return diffDays
+        })
+    })
+    return count
 }
-
 
 function range(start, end) {
     return Array(end - start + 1).fill().map((_, idx) => start + idx)
 }
 
-const getDoneWeek = date => {
-    if (date !== "") {
-        const current = new Date(date)
-        const onejan = new Date(current.getFullYear(), 0, 1);
-        return Math.ceil((((current - onejan) / 86400000) + onejan.getDay() + 1) / 7);
-    }
-    return 0
-
-}

@@ -3,15 +3,12 @@
 
 const main = () => {
     const data = getAllCards()
-    const sheets = SpreadsheetApp.getActiveSpreadsheet().getSheets();
+    const sheets = getSheets()
     buildFirst(sheets[0], data)
     buildSecond(sheets[1], data)
     buildThird(sheets[2], data)
     buildFourth(sheets[3], data)
 }
-
-
-
 
 const buildFirst = (sheet, data) => {
     Logger.log("primera pagina")
